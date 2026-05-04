@@ -1,1 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Analytics Dashboard</title>
+  <style>
+    body {
+      background: #0b0b0b;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 25px;
+    }
 
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #333;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #181818;
+    }
+
+    tr:nth-child(even) {
+      background: #111;
+    }
+  </style>
+</head>
+<body>
+  <h1>Analytics Dashboard</h1>
+
+  <input id="key" placeholder="Admin key">
+  <button onclick="loadVisits()">Load Visits</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>IP</th>
+        <th>City</th>
+        <th>State</th>
+        <th>Country</th>
+        <th>Page</th>
+        <th>Browser</th>
+      </tr>
+    </thead>
+    <tbody id="visits"></tbody>
+  </table>
+
+  <script>
+    async function loadVisits() {
+      const key = document.getElementById("key").value;
+
+      const res = await fetch("/api/visits", {
+        headers: {
+          Authorization: `Bearer ${key}`
+        }
+      });
+
+      if (!res.ok) {
+        alert("Wrong admin key");
+        return;
+      }
+
+      const visits = await res.json();
+
+      document.getElementById("visits").innerHTML = visits.map(v => `
+        <tr>
+          <td>${new Date(v.time).toLocaleString()}</td>
+          <td>${v.ip}</td>
+          <td>${v.city}</td>
+          <td>${v.state}</td>
+          <td>${v.country}</td>
+          <td>${v.page}</td>
+          <td>${v.userAgent}</td>
+        </tr>
+      `).join("");
+    }
+
+    setInterval(loadVisits, 5000);
+  </script>
+</body>
+</html>
