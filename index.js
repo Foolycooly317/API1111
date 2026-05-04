@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-const ADMIN_KEY = process.env.ADMIN_KEY || "change-this-password";
+const ADMIN_KEY = process.env.ADMIN_KEY || "FLCL1483";
 const visits = [];
 
 // 🔧 FIXED IP FUNCTION
