@@ -14,8 +14,24 @@ const visits = [];
 
 app.post("/track", async (req, res) => {
   const ip =
-    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
-    req.socket.remoteAddress;
+    function getIPv4(req) {
+  let ip =
+    req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+    req.socket.remoteAddress ||
+    "";
+
+  // Convert IPv6 localhost / mapped IPv4
+  if (ip.startsWith("::ffff:")) {
+    ip = ip.replace("::ffff:", "");
+  }
+
+  // If it's pure IPv6, you can't convert it to real IPv4
+  if (ip.includes(":")) {
+    return "IPv6";
+  }
+
+  return ip;
+}
 
   let location = {
     city: "Unknown",
