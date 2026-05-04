@@ -9,10 +9,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-const ADMIN_KEY = process.env.ADMIN_KEY || "FLCL1483";
+const ADMIN_KEY = process.env.ADMIN_KEY || "change-this-password";
 const visits = [];
 
-// 🔧 FIXED IP FUNCTION
 function getIP(req) {
   let ip =
     req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
@@ -23,7 +22,6 @@ function getIP(req) {
 
   if (!ip) return "Unknown";
 
-  // Convert IPv4-mapped IPv6
   if (ip.startsWith("::ffff:")) {
     ip = ip.replace("::ffff:", "");
   }
@@ -31,7 +29,10 @@ function getIP(req) {
   return ip;
 }
 
-// 📡 TRACK ENDPOINT
+function isAdmin(req) {
+  return req.headers.authorization === `Bearer ${ADMIN_KEY}`;
+}
+
 app.post("/track", async (req, res) => {
   const ip = getIP(req);
 
@@ -49,11 +50,12 @@ app.post("/track", async (req, res) => {
       state: geo.data.region || "Unknown",
       country: geo.data.country_name || "Unknown"
     };
-  } catch (err) {
+  } catch {
     console.log("Geo lookup failed");
   }
 
   const visit = {
+    id: Date.now().toString() + Math.random().toString(36).slice(2),
     ip,
     time: new Date().toISOString(),
     page: req.body.page || "Unknown",
@@ -63,22 +65,36 @@ app.post("/track", async (req, res) => {
   };
 
   visits.unshift(visit);
-
   console.log(visit);
 
   res.sendStatus(204);
 });
 
-// 🔐 PROTECTED API
 app.get("/api/visits", (req, res) => {
-  if (req.headers.authorization !== `Bearer ${ADMIN_KEY}`) {
-    return res.sendStatus(403);
-  }
-
+  if (!isAdmin(req)) return res.sendStatus(403);
   res.json(visits);
 });
 
-// 🏠 OPTIONAL HOMEPAGE
+app.delete("/api/visits/:id", (req, res) => {
+  if (!isAdmin(req)) return res.sendStatus(403);
+
+  const index = visits.findIndex(v => v.id === req.params.id);
+
+  if (index === -1) {
+    return res.sendStatus(404);
+  }
+
+  visits.splice(index, 1);
+  res.sendStatus(204);
+});
+
+app.delete("/api/visits", (req, res) => {
+  if (!isAdmin(req)) return res.sendStatus(403);
+
+  visits.length = 0;
+  res.sendStatus(204);
+});
+
 app.get("/", (req, res) => {
   res.send("Analytics server running");
 });
